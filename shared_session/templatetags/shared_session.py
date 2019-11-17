@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_encode
 
 register = template.Library()
@@ -55,14 +56,16 @@ class LoaderNode(template.Node):
             'dst': domain,
             'ts': timezone.now().isoformat()
         })
-        return urlsafe_base64_encode(enc_payload).decode('ascii')
+        return force_text(urlsafe_base64_encode(enc_payload), encoding='ascii')
 
     def build_url(self, domain, message):
         return urljoin(domain, reverse('shared_session:share', kwargs={'message': message}))
 
     def render(self, context):
-        request = context['request']
+        if not 'request' in context:
+            return ''
 
+        request = context['request']
         if request.session.is_empty():
             return ''
 
